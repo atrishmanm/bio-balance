@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutrition & BMI Analyzer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap');
+
+        :root {
+            --primary-color: #34D399;
+            --secondary-color: #10B981;
+            --accent-color: #D1FAE5;
+            --background-color: #F0FDF4;
+            --text-color: #065F46;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, var(--accent-color) 0%, transparent 20%),
+                radial-gradient(circle at 90% 30%, var(--accent-color) 0%, transparent 20%),
+                radial-gradient(circle at 50% 60%, var(--accent-color) 0%, transparent 20%),
+                radial-gradient(circle at 80% 80%, var(--accent-color) 0%, transparent 20%);
+            opacity: 0.4;
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0.5rem;
+        }
+
+        .analyzer-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(209, 250, 229, 0.4);
+            margin: 0.5rem 0;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            background: var(--background-color);
+            border-radius: 16px;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: white;
+            color: var(--text-color);
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(52, 211, 153, 0.1);
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(52, 211, 153, 0.2);
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(52, 211, 153, 0.1);
+        }
+
+        .nutrient-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .nutrient-item {
+            background: var(--background-color);
+            padding: 1rem;
+            border-radius: 16px;
+            text-align: center;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 8px rgba(52, 211, 153, 0.1);
+        }
+
+        .nutrient-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: center;
+            color: var(--text-color);
+            box-shadow: 0 4px 12px rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(209, 250, 229, 0.4);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .footer-names {
+            font-weight: 500;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-names span {
+            display: inline-flex;
+            padding: 0.5rem 1rem;
+            background: var(--accent-color);
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .loading-spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 2px solid var(--accent-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .bmi-inputs {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .bmi-category {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .unit-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .unit-button {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: var(--background-color);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .unit-button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (min-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+            
+            .input-group {
+                flex-direction: row;
+                padding: 0.75rem;
+            }
+            
+            button {
+                width: auto;
+                white-space: nowrap;
+            }
+
+            .title {
+                font-size: 1.75rem;
+            }
+
+            .analyzer-card {
+                padding: 1.5rem;
+            }
+
+            .nutrient-grid {
+                gap: 1rem;
+            }
+
+            .bmi-inputs {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .footer {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="analyzer-card">
+            <h1 class="title">Nutrition Analyzer</h1>
+            
+            <div class="input-group">
+                <input type="text" id="foodInput" placeholder="What's on your plate? (e.g., '1 avocado')" />
+                <button id="analyzeButton">Analyze</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <span>Analyzing your food...</span>
+            </div>
+
+            <div id="result"></div>
+        </div>
+
+        <div class="analyzer-card">
+            <h1 class="title">BMI Calculator</h1>
+            
+            <div class="unit-toggle">
+                <button class="unit-button active" id="metricUnit">Metric</button>
+                <button class="unit-button" id="imperialUnit">Imperial</button>
+            </div>
+
+            <div id="metricInputs" class="bmi-inputs">
+                <input type="number" id="heightCm" placeholder="Height (cm)" min="0" step="0.1" />
+                <input type="number" id="weightKg" placeholder="Weight (kg)" min="0" step="0.1" />
+            </div>
+
+            <div id="imperialInputs" class="bmi-inputs" style="display: none;">
+                <input type="number" id="heightFt" placeholder="Height (ft)" min="0" step="0.1" />
+                <input type="number" id="heightIn" placeholder="Height (in)" min="0" max="11" step="0.1" />
+                <input type="number" id="weightLbs" placeholder="Weight (lbs)" min="0" step="0.1" />
+            </div>
+
+            <button id="calculateBMI">Calculate BMI</button>
+
+            <div id="bmiResult" class="result-card" style="display: none;">
+                <div class="nutrient-grid">
+                    <div class="nutrient-item">
+                        <div class="nutrient-icon">📊</div>
+                        <div class="text-2xl font-bold" id="bmiValue" style="color: var(--primary-color)">0.0</div>
+                        <div class="text-sm">Your BMI</div>
+                    </div>
+                    <div class="nutrient-item">
+                        <div class="nutrient-icon">📈</div>
+                        <div class="text-xl font-bold" id="bmiCategory">-</div>
+                        <div class="text-sm">Category</div>
+                    </div>
+                </div>
+                <p class="mt-6 text-center text-sm italic text-gray-600" id="bmiTip"></p>
+            </div>
+        </div>
+
+        <div class="analyzer-card">
+            <h1 class="title">Activity Logger</h1>
+            <div class="input-group">
+                <input type="text" id="activityInput" placeholder="Describe your activity (e.g., '30 minutes running')" />
+                <button id="logActivityButton">Log Activity</button>
+            </div>
+            <div id="activityResult"></div>
+        </div>
+
+        <footer class="footer">
+            <p>Crafted with love ❤️ & care 🌱</p>
+            <div class="footer-names">
+                <span>Atrishman Mukherjee</span>
+                <span>Divyanshu Kant</span>
+                <span>Rishit Srivastava</span>
+                <span>Anirush Ashok</span>
+                <span>Divyansh Thankur</span>
+                <span>Deepak Prakash Ray</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Nutrition Analysis Code
+        document.getElementById('analyzeButton').addEventListener('click', analyzeFood);
+        document.getElementById('foodInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                analyzeFood();
+            }
+        });
+
+        async function analyzeFood() {
+            const foodInput = document.getElementById('foodInput');
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            const foodItem = foodInput.value;
+
+            if (!foodItem.trim()) {
+                resultDiv.innerHTML = `
+                    <div class="result-card">
+                        <p class="text-red-500">Please tell us what you're eating! 🍽️</p>
+                    </div>
+                `;
+                return;
+            }
+
+            loadingDiv.style.display = 'flex';
+            resultDiv.innerHTML = '';
+
+            const apiKey = '90660ba7013cd094e0dcf279110eb249';
+            const appId = '5c6d5857';
+            const apiUrl = 'https://trackapi.nutritionix.com/v2/natural/nutrients';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-app-id': appId,
+                        'x-app-key': apiKey
+                    },
+                    body: JSON.stringify({ query: foodItem })
+                });
+
+                const data = await response.json();
+
+                loadingDiv.style.display = 'none';
+
+                if (data.foods && data.foods.length > 0) {
+                    const food = data.foods[0];
+                    resultDiv.innerHTML = `
+                        <div class="result-card">
+                            <h2 class="text-2xl font-bold mb-2">
+                                ${food.food_name.charAt(0).toUpperCase() + food.food_name.slice(1)} 
+                                <span class="text-lg">🌱</span>
+                            </h2>
+                            <p class="text-sm text-gray-600 mb-4">Serving: ${food.serving_qty} ${food.serving_unit} (${food.serving_weight_grams}g)</p>
+                            
+                            <div class="nutrient-grid">
+                                <div class="nutrient-item">
+                                    <div class="nutrient-icon">🔥</div>
+                                
+                                    <div class="text-2xl font-bold">${Math.round(food.nf_calories)}</div>
+                                    <div class="text-sm">Calories</div>
+                                </div>
+                                <div class="nutrient-item">
+                                    <div class="nutrient-icon">🥩</div>
+                                    <div class="text-2xl font-bold">${food.nf_protein.toFixed(1)}g</div>
+                                    <div class="text-sm">Protein</div>
+                                </div>
+                                <div class="nutrient-item">
+                                    <div class="nutrient-icon">🍚</div>
+                                    <div class="text-2xl font-bold">${food.nf_total_carbohydrate.toFixed(1)}g</div>
+                                    <div class="text-sm">Carbs</div>
+                                </div>
+                                <div class="nutrient-item">
+                                    <div class="nutrient-icon">🥑</div>
+                                    <div class="text-2xl font-bold">${food.nf_total_fat.toFixed(1)}g</div>
+                                    <div class="text-sm">Fats</div>
+                                </div>
+                            </div>
+
+                            <p class="mt-6 text-center text-sm italic text-gray-600">
+                                ${getFoodTip()}
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result-card">
+                            <p class="text-red-500">Oops! We couldn't find nutrition info for "${foodItem}" 🤔</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultDiv.innerHTML = `
+                    <div class="result-card">
+                        <p class="text-red-500">Something went wrong! Please try again 🌱</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getFoodTip() {
+            const tips = [
+                "Pro tip: Pair this with leafy greens for extra nutrients! 🥬",
+                "Stay hydrated! Water helps with nutrient absorption 💧",
+                "This food contributes to your daily nutritional goals! 🎯",
+                "Practice mindful eating for better digestion 🧘‍♀️",
+                "Remember to eat a variety of colorful foods daily 🌈"
+            ];
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
+        // BMI Calculator Code
+        const metricUnit = document.getElementById('metricUnit');
+        const imperialUnit = document.getElementById('imperialUnit');
+        const metricInputs = document.getElementById('metricInputs');
+        const imperialInputs = document.getElementById('imperialInputs');
+        const calculateButton = document.getElementById('calculateBMI');
+        const bmiResult = document.getElementById('bmiResult');
+        const bmiValue = document.getElementById('bmiValue');
+        const bmiCategory = document.getElementById('bmiCategory');
+        const bmiTip = document.getElementById('bmiTip');
+
+        metricUnit.addEventListener('click', () => {
+            metricUnit.classList.add('active');
+            imperialUnit.classList.remove('active');
+            metricInputs.style.display = 'grid';
+            imperialInputs.style.display = 'none';
+        });
+
+        imperialUnit.addEventListener('click', () => {
+            imperialUnit.classList.add('active');
+            metricUnit.classList.remove('active');
+            imperialInputs.style.display = 'grid';
+            metricInputs.style.display = 'none';
+        });
+
+        calculateButton.addEventListener('click', calculateBMI);
+
+        const bmiInputs = document.querySelectorAll('#metricInputs input, #imperialInputs input');
+        bmiInputs.forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    calculateBMI();
+                }
+            });
+        });
+
+        function calculateBMI() {
+            let bmi = 0;
+            let height = 0;
+            let weight = 0;
+
+            if (metricUnit.classList.contains('active')) {
+                height = parseFloat(document.getElementById('heightCm').value) / 100;
+                weight = parseFloat(document.getElementById('weightKg').value);
+                
+                if (!height || !weight) {
+                    alert('Please enter both height and weight values.');
+                    return;
+                }
+                
+                bmi = weight / (height * height);
+            } else {
+                const heightFt = parseFloat(document.getElementById('heightFt').value) || 0;
+                const heightIn = parseFloat(document.getElementById('heightIn').value) || 0;
+                const weightLbs = parseFloat(document.getElementById('weightLbs').value);
+
+                if (!heightFt || !weightLbs) {
+                    alert('Please enter both height and weight values.');
+                    return;
+                }
+
+                height = ((heightFt * 12) + heightIn) * 0.0254;
+                weight = weightLbs * 0.453592;
+                
+                bmi = weight / (height * height);
+            }
+
+            displayBMIResult(bmi);
+        }
+
+        function getBMICategory(bmi) {
+            if (bmi < 18.5) return ['Underweight', '🔽', 'Consider consulting a nutritionist for a healthy weight gain plan.'];
+            if (bmi < 25) return ['Normal Weight', '✅', 'Great job maintaining a healthy weight! Keep up your balanced lifestyle.'];
+            if (bmi < 30) return ['Overweight', '⚠️', 'Small lifestyle changes can help you reach a healthier weight.'];
+            return ['Obese', '⚠️', 'Consider consulting a healthcare provider for personalized advice.'];
+        }
+
+        function displayBMIResult(bmi) {
+            const [category, icon, tip] = getBMICategory(bmi);
+            
+            bmiResult.style.display = 'block';
+            bmiValue.textContent = bmi.toFixed(1);
+            bmiCategory.textContent = `${category} ${icon}`;
+            bmiTip.textContent = tip;
+        }
+
+        // Activity Logger Code
+        document.getElementById('logActivityButton').addEventListener('click', logActivity);
+
+        async function logActivity() {
+            const activityInput = document.getElementById('activityInput').value;
+            const activityResult = document.getElementById('activityResult');
+
+            if (!activityInput.trim()) {
+                activityResult.innerHTML = `<div class="result-card"><p class="text-red-500">Please describe your activity! 🏃‍♂️</p></div>`;
+                return;
+            }
+
+            const apiKey = '90660ba7013cd094e0dcf279110eb249';
+            const appId = '5c6d5857';
+            const apiUrl = 'https://trackapi.nutritionix.com/v2/natural/exercise';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-app-id': appId,
+                        'x-app-key': apiKey
+                    },
+                    body: JSON.stringify({ query: activityInput })
+                });
+
+                const data = await response.json();
+
+                if (data.exercises && data.exercises.length > 0) {
+                    const exercise = data.exercises[0];
+                    activityResult.innerHTML = `
+                        <div class="result-card">
+                            <h2 class="text-2xl font-bold mb-2">${exercise.name.charAt(0).toUpperCase() + exercise.name.slice(1)}</h2>
+                            <p><strong>Duration:</strong> ${exercise.duration_min} minutes</p>
+                            <p><strong>Calories Burned:</strong> ${Math.round(exercise.nf_calories)} kcal</p>
+                        </div>
+                    `;
+                } else {
+                    activityResult.innerHTML = `<div class="result-card"><p class="text-red-500">No information found for "${activityInput}".</p></div>`;
+                }
+            } catch (error) {
+                activityResult.innerHTML = `<div class="result-card"><p class="text-red-500">Something went wrong! Please try again.</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>
