@@ -2,7 +2,6 @@
 
 A modern web application that helps users track their nutrition, calculate BMI, and log physical activities - all with a beautiful, responsive UI.
 
-![Nutrition & BMI Analyzer](https://placeholder.com/wp-content/uploads/2018/10/placeholder.png)
 
 ## 🌱 Features
 
